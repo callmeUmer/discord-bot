@@ -11,24 +11,24 @@ reaper = commands.Bot(command_prefix='!!')
 
 @reaper.event
 async def on_ready():
-    activity = discord.Game(name="DEVELOPMENT UwU!", type="DEVELOPING")
+    activity = discord.Game(name="DEVELOPMENT UwU!", type=3)
     await reaper.change_presence(status=discord.Status.online, activity=activity)
     print("Bot is ready!")
 
 @reaper.command(name="greet", help="Greet another user")
 async def greeting(ctx, user: discord.Member=None):
-    if user != None:
+    if user is not None:
         await ctx.send(f"Hello {user.mention}")
     else:
         await ctx.send("Define a user to greet :)")
 
-@reaper.command(name="set prefix")
-@commands.is_owner()
+@reaper.command(name="set_prefix")
+@commands.has_role("echelon")
 async def set_prefix(ctx, pre=None):
     if pre:
-        ctx.send(f"Now the new prefix is {prefix}")
+        await ctx.send(f"Now the new prefix is {prefix}")
     else:
-        ctx.send("please choose a char as a prefix")
+        await ctx.send("please choose a char as a prefix")
 
 @reaper.command(name="ohio")
 async def ohioo(ctx):
@@ -40,6 +40,13 @@ async def ohioo(ctx):
     ]
     await ctx.send(f"{_list[random.randint(0,len(_list))]} \
                         \n {ctx.message.author.mention} OHIO !!!!!")
+
+
+@reaper.command("set_presence")
+@commands.is_owner()
+async def set_presence(ctx, presence:str):
+    activity = discord.Game(name=presence, type=3)
+    await reaper.change_presence(status=discord.Status.online, activity=activity)
 
 @reaper.event
 async def on_command_error(ctx, error):
