@@ -11,8 +11,6 @@ reaper = commands.Bot(command_prefix='!!')
 
 @reaper.event
 async def on_ready():
-    activity = discord.Game(name="DEVELOPMENT UwU!", type=3)
-    await reaper.change_presence(status=discord.Status.online, activity=activity)
     print("Bot is ready!")
 
 @reaper.command(name="greet", help="Greet another user")
