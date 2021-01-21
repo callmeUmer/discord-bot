@@ -42,9 +42,20 @@ async def ohioo(ctx):
 
 @reaper.command("set_presence")
 @commands.is_owner()
-async def set_presence(ctx, presence:str):
-    activity = discord.Game(name=presence, type=3)
-    await reaper.change_presence(status=discord.Status.online, activity=activity)
+async def set_presence(ctx, *, args=None):
+    if args is not None:
+        activity = discord.Game(name=args, type=3)
+        await reaper.change_presence(status=discord.Status.online, activity=activity)
+        await ctx.send(f"Changed the Presence to {args}")
+    else:
+        await ctx.send("Please define the presence")
+
+@reaper.command("reboot")
+@commands.is_owner()
+async def reboot(ctx):
+    await ctx.send("REBOOTING ........")
+    await ctx.bot.logout()
+
 
 @reaper.event
 async def on_command_error(ctx, error):
