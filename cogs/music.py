@@ -59,7 +59,7 @@ class Music(commands.Cog):
             error = lambda e: print('Player error: %s' % e) if e else None
             ctx.voice_client.play(source, after=error)
 
-        await ctx.send('Now playing: `{}`'.format(source.data.title))
+        await ctx.send('Now playing: `{}`'.format(source.data['title']))
 
 
     @commands.command("join", help="Joins a voice channel")
