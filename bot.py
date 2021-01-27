@@ -8,7 +8,7 @@ load_dotenv()
 TOKEN = os.environ['TOKEN']
 
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("!!"),
-                   description='Genral all-in-one bot :)')
+                   description='ALL-IN-ONE BOT :)')
 
 @bot.event
 async def on_ready():
