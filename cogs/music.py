@@ -83,3 +83,15 @@ class Music(commands.Cog):
     async def stop(self, ctx):
         if ctx.voice_client is not None:
             return await ctx.voice_client.disconnect()
+
+    @commands.command("pause", help="Pause the Audio Source")
+    async def pause(self, ctx):
+        if ctx.voice_client is not None:
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.pause()
+
+    @commands.command("resume", help="Resume the audio source")
+    async def resume(self, ctx):
+        if ctx.voice_client is not None:
+            if ctx.voice_client.is_paused():
+                ctx.voice_client.resume()
