@@ -1,6 +1,7 @@
 import youtube_dl
 import discord
 from discord.ext import commands
+from async_timeout import timeout
 import validators
 import asyncio
 import pprint
@@ -33,7 +34,7 @@ class YTSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
 
     @classmethod
-    async def from_url(cls, url, *, loop=None):
+    async def stream(cls, url, *, loop=None):
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
 
@@ -42,25 +43,59 @@ class YTSource(discord.PCMVolumeTransformer):
         filename = data['url']
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
+class Player:
+
+    def __init__(self, ctx):
+        self.bot = ctx.bot
+        self._ctx = ctx
+        self.next = asyncio.Event()
+        self.queue = asyncio.Queue()
+
+        ctx.bot.loop.create_task(self.player_loop())
+
+    def toggle_next(self):
+        return self.bot.loop.call_soon_threadsafe(self.next.set)
+
+    async def player_loop(self):
+         while True:
+            self.next.clear()
+            source = await self.queue.get()
+            self._ctx.guild.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
+            await self.next.wait()
+            """
+
+        print(source)
+        self._ctx.guild.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
+        await self.next.wait()
+        source.cleanup()
+"""
 
 class Music(commands.Cog):
     """Cog that handles Music stuff"""
     def __init__(self, bot):
         self.bot = bot
+        self.players = {}
+
+    def get_player(self, ctx):
+        try:
+            player = self.players[ctx.guild.id]
+        except KeyError:
+            player = Player(ctx)
+            self.players[ctx.guild.id] = player
+        return player
+
 
     @commands.command("play", help="Plays from keywords or URL")
     async def play(self, ctx, *, query):
         """Plays the music from given query"""
         valid = validators.url(query)
         query = query if valid else "ytsearch:" + query
+        player = self.get_player(ctx)
 
         async with ctx.typing():
-            source = await YTSource.from_url(url=query, loop=self.bot.loop)
-            error = lambda e: print('Player error: %s' % e) if e else None
-            ctx.voice_client.play(source, after=error)
-
-        await ctx.send('Now playing: `{}`'.format(source.data['title']))
-
+            source = await YTSource.stream(url=query, loop=self.bot.loop)
+            await player.queue.put(source)
+            #await ctx.send("Add")
 
     @commands.command("join", help="Joins a voice channel")
     @play.before_invoke
