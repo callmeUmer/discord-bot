@@ -62,13 +62,7 @@ class Player:
             source = await self.queue.get()
             self._ctx.guild.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
             await self.next.wait()
-            """
 
-        print(source)
-        self._ctx.guild.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
-        await self.next.wait()
-        source.cleanup()
-"""
 
 class Music(commands.Cog):
     """Cog that handles Music stuff"""
@@ -84,18 +78,27 @@ class Music(commands.Cog):
             self.players[ctx.guild.id] = player
         return player
 
+    async def queue_message(self, ctx, player, src):
+        vc = player._ctx.guild.voice_client
+        if vc is not None:
+            if not vc.is_playing():
+                await ctx.send(f"Playing `{src.data['title']}`")
+            else:
+                await ctx.send(f"Added `{src.data['title']}` to queue")
+
+
 
     @commands.command("play", help="Plays from keywords or URL")
     async def play(self, ctx, *, query):
         """Plays the music from given query"""
-        valid = validators.url(query)
-        query = query if valid else "ytsearch:" + query
         player = self.get_player(ctx)
 
         async with ctx.typing():
             source = await YTSource.stream(url=query, loop=self.bot.loop)
             await player.queue.put(source)
-            #await ctx.send("Add")
+            await self.queue_message(ctx, player, source)
+
+
 
     @commands.command("join", help="Joins a voice channel")
     @play.before_invoke
@@ -104,8 +107,6 @@ class Music(commands.Cog):
         if ctx.author.voice is not None:
             channel = ctx.author.voice.channel
             if ctx.voice_client is not None:
-                if ctx.voice_client.is_playing():
-                    ctx.voice_client.stop()
                 await ctx.voice_client.move_to(channel)
             else:
                 await channel.connect()
@@ -114,19 +115,28 @@ class Music(commands.Cog):
             await ctx.send(f"{ctx.message.author.mention} you are not connected to a voice channel")
 
 
-    @commands.command("stop", help="Disconnects from a voice channel")
+    @commands.command("disconnect", help="Disconnects from a voice channel")
+    async def disconnect(self, ctx):
+        if ctx.voice_client is not None:
+            ctx.voice_client.disconnect()
+            await ctx.message.add_reaction("⛔")
+
+    @commands.command("skip", help="Disconnects from a voice channel")
     async def stop(self, ctx):
         if ctx.voice_client is not None:
-            return await ctx.voice_client.disconnect()
+            ctx.voice_client.stop()
+            ctx.message.add_reaction("⏭")
 
     @commands.command("pause", help="Pause the Audio Source")
     async def pause(self, ctx):
         if ctx.voice_client is not None:
             if ctx.voice_client.is_playing():
                 ctx.voice_client.pause()
+                ctx.message.add_reaction("⏸")
 
     @commands.command("resume", help="Resume the audio source")
     async def resume(self, ctx):
         if ctx.voice_client is not None:
             if ctx.voice_client.is_paused():
                 ctx.voice_client.resume()
+                ctx.message.add_reaction("▶")
