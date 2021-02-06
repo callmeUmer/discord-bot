@@ -44,7 +44,7 @@ class YTSource(discord.PCMVolumeTransformer):
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 class Player:
-
+    """Player that handles concurrent queues"""
     def __init__(self, ctx):
         self.bot = ctx.bot
         self._ctx = ctx
@@ -52,9 +52,6 @@ class Player:
         self.queue = asyncio.Queue()
 
         ctx.bot.loop.create_task(self.player_loop())
-
-    def toggle_next(self):
-        return self.bot.loop.call_soon_threadsafe(self.next.set)
 
     async def player_loop(self):
          while True:
@@ -86,19 +83,18 @@ class Music(commands.Cog):
             else:
                 await ctx.send(f"Added `{src.data['title']}` to queue")
 
-
-
     @commands.command("play", help="Plays from keywords or URL")
     async def play(self, ctx, *, query):
         """Plays the music from given query"""
+        if ctx.voice_client is None:
+            return
+
         player = self.get_player(ctx)
 
         async with ctx.typing():
             source = await YTSource.stream(url=query, loop=self.bot.loop)
             await player.queue.put(source)
             await self.queue_message(ctx, player, source)
-
-
 
     @commands.command("join", help="Joins a voice channel")
     @play.before_invoke
@@ -118,25 +114,25 @@ class Music(commands.Cog):
     @commands.command("disconnect", help="Disconnects from a voice channel")
     async def disconnect(self, ctx):
         if ctx.voice_client is not None:
-            ctx.voice_client.disconnect()
+            await ctx.voice_client.disconnect()
             await ctx.message.add_reaction("⛔")
 
     @commands.command("skip", help="Disconnects from a voice channel")
     async def stop(self, ctx):
         if ctx.voice_client is not None:
             ctx.voice_client.stop()
-            ctx.message.add_reaction("⏭")
+            await ctx.message.add_reaction("⏭")
 
     @commands.command("pause", help="Pause the Audio Source")
     async def pause(self, ctx):
         if ctx.voice_client is not None:
             if ctx.voice_client.is_playing():
                 ctx.voice_client.pause()
-                ctx.message.add_reaction("⏸")
+                await ctx.message.add_reaction("⏸")
 
     @commands.command("resume", help="Resume the audio source")
     async def resume(self, ctx):
         if ctx.voice_client is not None:
             if ctx.voice_client.is_paused():
                 ctx.voice_client.resume()
-                ctx.message.add_reaction("▶")
+                await ctx.message.add_reaction("▶")
