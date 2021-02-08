@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 from async_timeout import timeout
 import validators
+import itertools
 import asyncio
 import pprint
 
@@ -48,12 +49,14 @@ class Player:
     def __init__(self, ctx):
         self.bot = ctx.bot
         self._ctx = ctx
+        self.volume = .5
         self.next = asyncio.Event()
         self.queue = asyncio.Queue()
 
         ctx.bot.loop.create_task(self.player_loop())
 
     async def player_loop(self):
+        """Player Loop which handles the queues"""
          while True:
             self.next.clear()
             source = await self.queue.get()
@@ -88,9 +91,9 @@ class Music(commands.Cog):
         """Plays the music from given query"""
         if ctx.voice_client is None:
             return
-
+        # get's the player for ctx
         player = self.get_player(ctx)
-
+        
         async with ctx.typing():
             source = await YTSource.stream(url=query, loop=self.bot.loop)
             await player.queue.put(source)
@@ -117,8 +120,8 @@ class Music(commands.Cog):
             await ctx.voice_client.disconnect()
             await ctx.message.add_reaction("⛔")
 
-    @commands.command("skip", help="Disconnects from a voice channel")
-    async def stop(self, ctx):
+    @commands.command("skip", help="Play the next song queued song")
+    async def skip(self, ctx):
         if ctx.voice_client is not None:
             ctx.voice_client.stop()
             await ctx.message.add_reaction("⏭")
@@ -136,3 +139,18 @@ class Music(commands.Cog):
             if ctx.voice_client.is_paused():
                 ctx.voice_client.resume()
                 await ctx.message.add_reaction("▶")
+
+    @commands.command("queue", help="Display the playlist queue", aliases=['q', 'playlist'])
+    async def playlist_info(self, ctx):
+        if ctx.voice_client is not None:
+            # get's the player for ctx.guild
+            player = self.get_player(ctx)
+            if player.queue.empty():
+                return ctx.send(embed=discord.Embed(title="Queue is Empty", color=discord.Color.red()))
+
+            # slice the deque object for first 10 elements
+            q = list(itertools.islice(player.queue._queue, 0, 10))
+            # discord embed description
+            fmt = '\n'.join(f"`{num} - {src.data['title']}`" for num, src in enumerate(q, 1))
+            embed = discord.Embed(title=f"{len(q)}-Upcoming Music", description=fmt, color=discord.Color.teal())
+            await ctx.send(embed=embed)
