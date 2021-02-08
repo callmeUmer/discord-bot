@@ -57,10 +57,11 @@ class Player:
 
     async def player_loop(self):
         """Player Loop which handles the queues"""
-         while True:
+        while True:
             self.next.clear()
             source = await self.queue.get()
             self._ctx.guild.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
+            source.volume = self.volume
             await self.next.wait()
 
 
@@ -93,7 +94,7 @@ class Music(commands.Cog):
             return
         # get's the player for ctx
         player = self.get_player(ctx)
-        
+
         async with ctx.typing():
             source = await YTSource.stream(url=query, loop=self.bot.loop)
             await player.queue.put(source)
@@ -116,18 +117,21 @@ class Music(commands.Cog):
 
     @commands.command("disconnect", help="Disconnects from a voice channel")
     async def disconnect(self, ctx):
+        """disconnects the bot from a voice channel"""
         if ctx.voice_client is not None:
             await ctx.voice_client.disconnect()
             await ctx.message.add_reaction("⛔")
 
     @commands.command("skip", help="Play the next song queued song")
     async def skip(self, ctx):
+        """skip the song to next queued one"""
         if ctx.voice_client is not None:
             ctx.voice_client.stop()
             await ctx.message.add_reaction("⏭")
 
     @commands.command("pause", help="Pause the Audio Source")
     async def pause(self, ctx):
+        """pause the voice_client"""
         if ctx.voice_client is not None:
             if ctx.voice_client.is_playing():
                 ctx.voice_client.pause()
@@ -135,6 +139,7 @@ class Music(commands.Cog):
 
     @commands.command("resume", help="Resume the audio source")
     async def resume(self, ctx):
+        """Resumes the voice_client"""
         if ctx.voice_client is not None:
             if ctx.voice_client.is_paused():
                 ctx.voice_client.resume()
@@ -142,6 +147,7 @@ class Music(commands.Cog):
 
     @commands.command("queue", help="Display the playlist queue", aliases=['q', 'playlist'])
     async def playlist_info(self, ctx):
+        """displays the list of queued items"""
         if ctx.voice_client is not None:
             # get's the player for ctx.guild
             player = self.get_player(ctx)
@@ -154,3 +160,17 @@ class Music(commands.Cog):
             fmt = '\n'.join(f"`{num} - {src.data['title']}`" for num, src in enumerate(q, 1))
             embed = discord.Embed(title=f"{len(q)}-Upcoming Music", description=fmt, color=discord.Color.teal())
             await ctx.send(embed=embed)
+
+    @commands.command("volume", help="Change the volume of the voice client")
+    async def change_volume(self, ctx, volume:float):
+        """Changes the volume of voice client"""
+        if ctx.voice_client is not None:
+            if volume < 0 or volume > 100:
+                return await ctx.send("Please Choose a volume from 0-100")
+
+            player = self.get_player(ctx)
+            if ctx.voice_client.source:
+                ctx.voice_client.source.volume = volume / 100
+
+            player.volume = volume / 100
+            await ctx.send(f"Successfully Changed the volume to {int(volume)}%")
