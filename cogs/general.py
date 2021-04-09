@@ -2,8 +2,8 @@ import os
 import discord
 import random
 import nacl
-import sys
 from discord.ext import commands
+import sys
 
 
 class General(commands.Cog):
