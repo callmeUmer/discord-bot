@@ -5,7 +5,7 @@ from discord.ext import commands
 from cogs import general, music
 
 load_dotenv()
-TOKEN = os.environ['TOKEN']
+TOKEN = os.environ.get('TOKEN')
 
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("!!"),
                    description='ALL-IN-ONE BOT :)')

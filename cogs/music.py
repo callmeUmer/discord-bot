@@ -149,14 +149,10 @@ class Music(commands.Cog):
     async def playlist_info(self, ctx):
         """displays the list of queued items"""
         if ctx.voice_client is not None:
-            # get's the player for ctx.guild
             player = self.get_player(ctx)
             if player.queue.empty():
                 return ctx.send(embed=discord.Embed(title="Queue is Empty", color=discord.Color.red()))
-
-            # slice the deque object for first 10 elements
             q = list(itertools.islice(player.queue._queue, 0, 10))
-            # discord embed description
             fmt = '\n'.join(f"`{num} - {src.data['title']}`" for num, src in enumerate(q, 1))
             embed = discord.Embed(title=f"{len(q)}-Upcoming Music", description=fmt, color=discord.Color.teal())
             await ctx.send(embed=embed)
