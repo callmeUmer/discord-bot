@@ -43,8 +43,11 @@ class General(commands.Cog):
     @commands.has_role("echelon")
     async def mass(self, ctx, user:discord.Member = None, iter: int = 10):
         if user is not None:
-            for i in range(iter):
-                await ctx.send(user.mention)
+            if iter < 50:
+                for i in range(iter):
+                    await ctx.send(user.mention, delete_after=60)
+            else:
+                await ctx.send(f"{ctx.message.author.mention} can't ping above 50")
         else:
             await ctx.send("You didn't define a user to ping")
 
