@@ -2,7 +2,7 @@ import os
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
-from cogs import general, music
+from cogs import general, music, anime
 
 load_dotenv()
 TOKEN = os.environ.get('TOKEN')
@@ -22,4 +22,5 @@ async def on_command_error(ctx, error):
 
 bot.add_cog(music.Music(bot))
 bot.add_cog(general.General(bot))
+bot.add_cog(anime.Anime(bot))
 bot.run(TOKEN)
