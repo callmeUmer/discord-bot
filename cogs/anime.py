@@ -6,9 +6,9 @@ import json
 from discord.ext import commands
 
 ANIME_QUERY = """
-query ($query: String) {
+query ($query: String, $type: MediaType) {
   Page {
-    media(search: $query, type: ANIME) {
+    media(search: $query, type: $type) {
       id
       title {
         romaji
@@ -27,6 +27,8 @@ query ($query: String) {
       popularity
       episodes
       season
+      chapters
+      volumes
       hashtag
       isAdult
       startDate {
@@ -48,7 +50,6 @@ ANILIST_API_URL = "https://graphql.anilist.co"
 ANILIST_IMAGE_URL = "https://img.anili.st/media/"
 
 
-
 class Anime(commands.Cog):
     """Cog utilizes anilist's graphql api to search for an anime"""
 
@@ -57,7 +58,13 @@ class Anime(commands.Cog):
 
     @commands.command(name="anime")
     async def anime(self, ctx, *, title):
-        response = self.request_anime(title)
+        response = self.request_graphql(title, type="ANIME")
+        await ctx.send(embed=self.create_embed(response.json()))
+
+    @commands.command(name="manga")
+    async def manga(self, ctx, *, title):
+        response = self.request_graphql(title, type='MANGA')
+        print(response.json())
         await ctx.send(embed=self.create_embed(response.json()))
 
     def create_embed(self, response):
@@ -84,14 +91,23 @@ class Anime(commands.Cog):
             emb.add_field(name = "Average Score",
                 value = str(first_entry["averageScore"]) + '%',
                 inline = True)
+                
+            if(first_entry['type'] == "MANGA"):
+                emb.add_field(name = "Chapters",
+                    value = first_entry["chapters"],
+                    inline = True)
 
-            emb.add_field(name = "Episodes",
-                value = first_entry["episodes"],
-                inline = True)
+                emb.add_field(name = "Volumes",
+                    value = first_entry["volumes"],
+                    inline = True)
+            else:
+                emb.add_field(name = "Episodes",
+                    value = first_entry["episodes"],
+                    inline = True)
 
-            emb.add_field(name = "Season",
-                value = first_entry["season"],
-                inline = True)
+                emb.add_field(name = "Season",
+                    value = first_entry["season"],
+                    inline = True)
 
             emb.add_field(name = "Start Date",
                 value = self.format_date(first_entry["startDate"]),
@@ -105,11 +121,11 @@ class Anime(commands.Cog):
             return emb
         except IndexError:
             emb = discord.Embed(title = "Anime Not Found",
-            color = discord.Color.red())
+                color = discord.Color.red())
             return emb
 
-    def request_anime(self, title):
-        q = {"query": ANIME_QUERY, "variables":{"query": title}}
+    def request_graphql(self, title, type):
+        q = {"query": ANIME_QUERY, "variables":{"query": title, "type": type}}
         return requests.post(ANILIST_API_URL, json=q)
 
     def get_title(self, res):
