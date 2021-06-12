@@ -91,7 +91,7 @@ class Anime(commands.Cog):
             emb.add_field(name = "Average Score",
                 value = str(first_entry["averageScore"]) + '%',
                 inline = True)
-                
+
             if(first_entry['type'] == "MANGA"):
                 emb.add_field(name = "Chapters",
                     value = first_entry["chapters"],

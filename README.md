@@ -19,6 +19,9 @@ Music streaming discord bot created with [Discord.py](https://github.com/Rapptz/
   - `queue` returns an embed object which displays upcoming queue
   - `volume` is used to set the volume level of the voice client
   - `disconnet` is used to disconnect the voice client from the voice channel
+- Anilist
+  - `manga`command request [Anilist's](https://anilist.co) graphql for the requested manga and returns an embed with all of the appropriate information
+  - `anime` command also request [Anilist's](https://anilist.co) graphql for the requested anime and returns an embed with all of the appropriate information
 - Other
   - `help` displays description of all commands
 
